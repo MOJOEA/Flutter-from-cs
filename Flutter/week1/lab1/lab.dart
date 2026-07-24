@@ -1,0 +1,23 @@
+void main() {
+  //ประกาศตัวแปรด้วย var
+  var name = "สมชาย ใจดี";
+  //name = "สมหญิง ตั้งใจ";
+  //name = 1;
+  print(name);
+
+  //ประกาศตัวแปรด้วย dynamic
+  dynamic name2 = "สมชาย ใจดี";
+  //name2 = "สมหญิง ตั้งใจ";
+  //name2 = 1;
+  print(name2);
+
+  //ประกาศค่าคงที่1
+  final name3 = "สมชาย ใจดี";
+  //name3 = "สมหญิง ตั้งใจ";
+  print(name3);
+
+  //ประกาศค่าคงที่2
+  const name4 = "สมชาย ใจดี";
+  name4 = "สมหญิง ตั้งใจ";
+  print(name4);
+}
