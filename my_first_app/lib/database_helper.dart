@@ -1,91 +1,72 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'main.dart';
+import 'main.dart';       // เพื่อใช้ class Diary
 
 class DatabaseHelper {
   static Database? _db;
 
+  // เปิดฐานข้อมูล (เปิดครั้งเดียว ใช้ซ้ำ)
+    // เปลี่ยนชื่อฐานข้อมูลเพื่อบังคับระบบสร้างตารางใหม่ที่มีคอลัมน์ครบถ้วน
+    // ปรับขยับเวอร์ชัน และล้างตารางเก่าสร้างใหม่เมื่อพบโครงสร้างเปลี่ยน
   static Future<Database> get database async {
     if (_db != null) return _db!;
     _db = await openDatabase(
-      join(await getDatabasesPath(), 'myplaylist.db'),
-      version: 2,
-      onCreate: (db, version) async {
-        await db.execute(
+      join(await getDatabasesPath(), 'mydiary.db'), // กลับมาใช้ชื่อเดิมได้
+      version: 2, // << แก้ไขจุดนี้: ขยับเวอร์ชันขึ้นจาก 1 เป็น 2 เพื่อสั่งให้ฐานข้อมูลอัปเกรดตาราง
+      onCreate: (db, version) {
+        return db.execute(
           'CREATE TABLE diaries('
           'id INTEGER PRIMARY KEY AUTOINCREMENT, '
-          'song TEXT NOT NULL, '
-          'artist TEXT NOT NULL, '
+          'title TEXT NOT NULL, '
           'content TEXT NOT NULL, '
           'date TEXT NOT NULL, '
-          'type TEXT NOT NULL)',
+          'mood TEXT NOT NULL)',
         );
-
-        final List<Map<String, dynamic>> mockSongs = [
-          {'song': 'IN THE STARS', 'artist': 'BENSON BOONE', 'content': 'เพลงนี้พูดถึงการจากลาที่งดงาม...', 'date': '2026-09-07', 'type': 'Pop'},
-          {'song': 'MY LIFE', 'artist': 'IMAGINE DRAGONS', 'content': 'เพลงร็อกจังหวะหนักแน่นที่พูดถึงชีวิต...', 'date': '2026-09-07', 'type': 'Rock'},
-          {'song': 'IT\'S YOU', 'artist': 'ALI GATIE', 'content': 'เพลงรักซึ้งๆ ถ่ายทอดความรู้สึกอบอุ่น...', 'date': '2026-09-07', 'type': 'R&B Soul'},
-          {'song': 'LET HER GO', 'artist': 'PASSENGER', 'content': 'เพลงอะคูสติกสุดคลาสสิกที่ทุกคนคุ้นเคย...', 'date': '2026-09-07', 'type': 'Acoustic / Folk'},
-          {'song': 'HAPPY SONG', 'artist': 'BRING ME THE HORIZON', 'content': 'เพลงเมทัลสุดมันส์ที่เต็มไปด้วยพลังงาน...', 'date': '2026-09-07', 'type': 'Metal'},
-        ];
-
-        for (var song in mockSongs) {
-          await db.insert('diaries', song);
-        }
-      },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) {
-          await db.execute('DROP TABLE IF EXISTS diaries');
-          await db.execute(
-            'CREATE TABLE diaries('
-            'id INTEGER PRIMARY KEY AUTOINCREMENT, '
-            'song TEXT NOT NULL, '
-            'artist TEXT NOT NULL, '
-            'content TEXT NOT NULL, '
-            'date TEXT NOT NULL, '
-            'type TEXT NOT NULL)',
-          );
-
-          final List<Map<String, dynamic>> mockSongs = [
-            {'song': 'IN THE STARS', 'artist': 'BENSON BOONE', 'content': 'เพลงนี้พูดถึงการจากลาที่งดงาม...', 'date': '2026-09-07', 'type': 'Pop'},
-            {'song': 'MY LIFE', 'artist': 'IMAGINE DRAGONS', 'content': 'เพลงร็อกจังหวะหนักแน่นที่พูดถึงชีวิต...', 'date': '2026-09-07', 'type': 'Rock'},
-            {'song': 'IT\'S YOU', 'artist': 'ALI GATIE', 'content': 'เพลงรักซึ้งๆ ถ่ายทอดความรู้สึกอบอุ่น...', 'date': '2026-09-07', 'type': 'R&B Soul'},
-            {'song': 'LET HER GO', 'artist': 'PASSENGER', 'content': 'เพลงอะคูสติกสุดคลาสสิกที่ทุกคนคุ้นเคย...', 'date': '2026-09-07', 'type': 'Acoustic / Folk'},
-            {'song': 'HAPPY SONG', 'artist': 'BRING ME THE HORIZON', 'content': 'เพลงเมทัลสุดมันส์ที่เต็มไปด้วยพลังงาน...', 'date': '2026-09-07', 'type': 'Metal'},
-          ];
-
-          for (var song in mockSongs) {
-            await db.insert('diaries', song);
-          }
-        }
       },
     );
     return _db!;
   }
 
-  static Future<void> insert(Song song) async {
+
+  // เพิ่มบันทึก
+  static Future<void> insert(Diary diary) async {
     final db = await database;
-    await db.insert('diaries', song.toMap());
+    await db.insert('diaries', diary.toMap());
   }
 
-  static Future<List<Song>> getAll() async {
+  // อ่านบันทึกทั้งหมด
+  static Future<List<Diary>> getAll() async {
     final db = await database;
     final maps = await db.query('diaries', orderBy: 'id DESC');
-    return maps.map((map) => Song.fromMap(map)).toList();
+    return maps.map((map) => Diary.fromMap(map)).toList();
   }
 
+  // อ่านจากบางส่วนของชื่อ
+  static Future<List<Diary>> searchByTitle(String keyword) async {
+    final db = await database;
+    final maps = await db.query(
+      'diaries',
+      where: 'title LIKE ?',
+      whereArgs: ['%$keyword%'],
+      orderBy: 'id DESC',
+    );
+    return maps.map((map) => Diary.fromMap(map)).toList();
+  }
+
+  // ลบบันทึก
   static Future<void> delete(int id) async {
     final db = await database;
     await db.delete('diaries', where: 'id = ?', whereArgs: [id]);
   }
 
-  static Future<void> update(Song song) async {
-    final db = await database;
-    await db.update(
-      'diaries',
-      song.toMap(),
-      where: 'id = ?',
-      whereArgs: [song.id],
-    );
-  }
+  // อัปเดตบันทึก
+  static Future<void> update(Diary diary) async {
+  final db = await database;
+  await db.update(
+    'diaries',
+    diary.toMap(),
+    where: 'id = ?',
+    whereArgs: [diary.id],
+  );
+}
 }
