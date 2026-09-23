@@ -2,17 +2,18 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'main.dart';       // เพื่อใช้ class Diary
 
+
 class DatabaseHelper {
   static Database? _db;
 
   // เปิดฐานข้อมูล (เปิดครั้งเดียว ใช้ซ้ำ)
-    // เปลี่ยนชื่อฐานข้อมูลเพื่อบังคับระบบสร้างตารางใหม่ที่มีคอลัมน์ครบถ้วน
-    // ปรับขยับเวอร์ชัน และล้างตารางเก่าสร้างใหม่เมื่อพบโครงสร้างเปลี่ยน
+  // เปลี่ยนชื่อฐานข้อมูลเพื่อบังคับระบบสร้างตารางใหม่ที่มีคอลัมน์ครบถ้วน
+  // ปรับขยับเวอร์ชัน และล้างตารางเก่าสร้างใหม่เมื่อพบโครงสร้างเปลี่ยน
   static Future<Database> get database async {
     if (_db != null) return _db!;
     _db = await openDatabase(
       join(await getDatabasesPath(), 'mydiary.db'), // กลับมาใช้ชื่อเดิมได้
-      version: 2, // << แก้ไขจุดนี้: ขยับเวอร์ชันขึ้นจาก 1 เป็น 2 เพื่อสั่งให้ฐานข้อมูลอัปเกรดตาราง
+      version: 1, // << แก้ไขจุดนี้: ขยับเวอร์ชันขึ้นจาก 1 เป็น 2 เพื่อสั่งให้ฐานข้อมูลอัปเกรดตาราง
       onCreate: (db, version) {
         return db.execute(
           'CREATE TABLE diaries('
@@ -20,8 +21,16 @@ class DatabaseHelper {
           'title TEXT NOT NULL, '
           'content TEXT NOT NULL, '
           'date TEXT NOT NULL, '
-          'mood TEXT NOT NULL)',
+          'mood TEXT NOT NULL, '
+          'author TEXT NOT NULL DEFAULT "ไม่ระบุชื่อ")'
         );
+      },
+     onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 1) {
+          await db.execute(
+            'ALTER TABLE diaries ADD COLUMN author TEXT NOT NULL DEFAULT "ไม่ระบุชื่อ"',
+          );
+        }
       },
     );
     return _db!;
