@@ -1,6 +1,8 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:my_first_app/database_helper.dart'; // << แก้ไข: เพิ่มบรรทัดนี้ด้านบนสุดของไฟล์เพื่อเรียกใช้งาน DatabaseHelper
-
+import 'dart:convert'; // สำหรับ jsonDecode
 import 'package:my_first_app/api_service.dart'; // << เพิ่มบรรทัดนี้เพื่อเรียกใช้งาน ApiService
 
 void main() => runApp(const MyApp());
@@ -61,6 +63,61 @@ class Diary {
       date: json['date'] ?? '',
       mood: json['mood'] ?? '',
       author: json['author'] ?? '',
+    );
+  }
+}
+
+class Pokemon {
+  final int? id;
+  final String name;
+  final int height;
+  final int weight;
+
+  Pokemon({
+    this.id,
+    required this.name,
+    required this.height,
+    required this.weight,
+  });
+
+  // 3. สำหรับแปลงข้อมูลจาก API Mock Data (JSON) มาเป็นวัตถุ Pokemon
+  factory Pokemon.fromJson(Map<String, dynamic> json) {
+    return Pokemon(
+      id: json['id'] is int
+          ? json['id']
+          : int.tryParse(
+              json['id']?.toString() ?? '',
+            ), // รองรับทั้ง id ที่เป็นเลขและข้อความ
+      name: json['name'] ?? '' as String,
+      height: json['height'] ?? '' as int,
+      weight: json['weight'] ?? '' as int,
+    );
+  }
+}
+
+class Types {
+  final Type type;
+
+  Types({
+    required this.type
+  });
+
+  factory Types.fromJson(Map<String, dynamic> json) {
+    return Types(
+      type: Type.fromJson(json['type'])
+      );
+  }
+}
+
+class Type {
+  final String name;
+  Type({
+    required this.name, 
+  });
+
+  factory Type.fromJson(Map<String, dynamic> json) {
+    return Type(
+      name: json['name'] as String, 
     );
   }
 }
@@ -362,6 +419,94 @@ class _DiaryListPageState extends State<DiaryListPage> {
           }
         },
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+// หน้ารายการบันทึก PokemonPage
+// -------------------------------------------------------------------------------------------------------------------------------------------
+class PokemonPage extends StatefulWidget {
+  const PokemonPage({super.key});
+  
+  @override
+  State<PokemonPage> createState() => _PokemonPageState();
+}
+
+class _PokemonPageState extends State<PokemonPage> {
+  List<Pokemon> pokemons = []; // เริ่มจากว่าง (จะโหลดจาก DB)
+  late Future<Pokemon> _pokemonFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _pokemonFuture = ApiService.fetchPokemon();
+    print(ApiService.fetchPokemon());
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Pokemon(${0})'),
+        actions: [
+          //  เพิ่มส่วนนี้
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              setState(() {
+                _pokemonFuture = ApiService.fetchPokemon();
+              });
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // ── กล่องหา pokemon ──
+          FutureBuilder<Pokemon>(
+            future: _pokemonFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                );
+              } else if (snapshot.hasError) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    'มันไม่โหรต อ้าาาาา',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                );
+              } else {
+                final pokemon = snapshot.data!;
+                return Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.indigo[50],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        '${pokemon.name} height:${pokemon.height} weight:${pokemon.weight}',
+                        style: const TextStyle(
+                          fontStyle: FontStyle.italic,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+            },
+          ),
+        ],
       ),
     );
   }
@@ -696,7 +841,11 @@ class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0; // หน้าที่เลือกอยู่ (0=บันทึก, 1=เกี่ยวกับ)
 
   // รายการหน้า
-  final List<Widget> _pages = [const DiaryListPage(), const AboutPage()];
+  final List<Widget> _pages = [
+    const DiaryListPage(),
+    const PokemonPage(),
+    const AboutPage(),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -712,6 +861,7 @@ class _MainPageState extends State<MainPage> {
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.book), label: 'บันทึก'),
+          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Pokemon'),
           BottomNavigationBarItem(icon: Icon(Icons.info), label: 'เกี่ยวกับ'),
         ],
       ),

@@ -1,41 +1,42 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'main.dart';       // เพื่อใช้ class Diary
-
+import 'main.dart'; // เพื่อใช้ class Diary และ Pokemon (ถ้ามี)
 
 class DatabaseHelper {
   static Database? _db;
 
-  // เปิดฐานข้อมูล (เปิดครั้งเดียว ใช้ซ้ำ)
-  // เปลี่ยนชื่อฐานข้อมูลเพื่อบังคับระบบสร้างตารางใหม่ที่มีคอลัมน์ครบถ้วน
-  // ปรับขยับเวอร์ชัน และล้างตารางเก่าสร้างใหม่เมื่อพบโครงสร้างเปลี่ยน
+  // เปิดฐานข้อมูล
   static Future<Database> get database async {
     if (_db != null) return _db!;
     _db = await openDatabase(
-      join(await getDatabasesPath(), 'mydiary.db'), // กลับมาใช้ชื่อเดิมได้
-      version: 1, // << แก้ไขจุดนี้: ขยับเวอร์ชันขึ้นจาก 1 เป็น 2 เพื่อสั่งให้ฐานข้อมูลอัปเกรดตาราง
-      onCreate: (db, version) {
-        return db.execute(
+      join(await getDatabasesPath(), 'mydiary.db'),
+      version: 2, 
+      onCreate: (db, version) async {
+        // สร้างตาราง diaries
+        await db.execute(
           'CREATE TABLE diaries('
-          'id INTEGER PRIMARY KEY AUTOINCREMENT, '
+          'id INTEGER PRIMARY KEY AUTOINCREMENT,'
           'title TEXT NOT NULL, '
           'content TEXT NOT NULL, '
           'date TEXT NOT NULL, '
           'mood TEXT NOT NULL, '
           'author TEXT NOT NULL DEFAULT "ไม่ระบุชื่อ")'
         );
-      },
-     onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 1) {
-          await db.execute(
-            'ALTER TABLE diaries ADD COLUMN author TEXT NOT NULL DEFAULT "ไม่ระบุชื่อ"',
-          );
-        }
+        // แก้ไข: เพิ่มวงเล็บปิด และนำคอมมาตัวสุดท้ายออก
+        await db.execute(
+          'CREATE TABLE pokemons('
+          'id INTEGER PRIMARY KEY AUTOINCREMENT, '
+          'number INT NOT NULL, '
+          'name TEXT NOT NULL, '
+          'ranmark TEXT NOT NULL, '
+          'date TEXT NOT NULL)' 
+        );
       },
     );
     return _db!;
   }
 
+  // ==================== ฟังก์ชันสำหรับ DIARIES ====================
 
   // เพิ่มบันทึก
   static Future<void> insert(Diary diary) async {
@@ -70,12 +71,40 @@ class DatabaseHelper {
 
   // อัปเดตบันทึก
   static Future<void> update(Diary diary) async {
-  final db = await database;
-  await db.update(
-    'diaries',
-    diary.toMap(),
-    where: 'id = ?',
-    whereArgs: [diary.id],
-  );
-}
+    final db = await database;
+    await db.update(
+      'diaries',
+      diary.toMap(),
+      where: 'id = ?',
+      whereArgs: [diary.id],
+    );
+  }
+
+  // ==================== ฟังก์ชันสำหรับ POKEMONS ====================
+  // (หมายเหตุ: หากคุณมีคลาส Pokemon ให้เปลี่ยนจาก List<Diary> เป็น List<Pokemon> นะครับ)
+
+  // อ่านบันทึกทั้งหมด (แก้ไข: เปลี่ยนชื่อตารางเป็น 'pokemons')
+  static Future<List<Diary>> getAllPokemon() async {
+    final db = await database;
+    final maps = await db.query('pokemons', orderBy: 'id DESC');
+    return maps.map((map) => Diary.fromMap(map)).toList();
+  }
+
+  // อ่านจากบางส่วนของชื่อ (แก้ไข: เปลี่ยนชื่อตารางเป็น 'pokemons')
+  static Future<List<Diary>> searchByname(String keyword) async {
+    final db = await database;
+    final maps = await db.query(
+      'pokemons',
+      where: 'name LIKE ?',
+      whereArgs: ['%$keyword%'],
+      orderBy: 'id DESC',
+    );
+    return maps.map((map) => Diary.fromMap(map)).toList();
+  }
+
+  // ลบบันทึก (แก้ไข: เปลี่ยนชื่อตารางเป็น 'pokemons')
+  static Future<void> deletepokemon(int id) async {
+    final db = await database;
+    await db.delete('pokemons', where: 'id = ?', whereArgs: [id]);
+  }
 }
