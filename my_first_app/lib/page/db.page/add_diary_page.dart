@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:my_first_app/services/api_service.dart';
+import 'package:my_first_app/services/api/api.service.dart';
 
-import '../models/diary.dart';
-import '../models/quote.dart';
+import '../../models/diary.dart';
+import '../../models/quote.dart';
 
 class AddDiaryPage extends StatefulWidget {
   final Diary? existing;

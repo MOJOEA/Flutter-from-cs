@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'db_diary_page.dart';
-import 'about_page.dart';
+import 'db.page/db_diary_page.dart';
+import 'api.page/api_diary_list_page.dart';
+import 'about.page/about_page.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -15,6 +16,7 @@ class _MainPageState extends State<MainPage> {
 
   final List<Widget> _pages = [
     const DiaryListPage(),
+    const ApiDiaryPage(),
     const AboutPage(),
   ];
 
@@ -33,6 +35,10 @@ class _MainPageState extends State<MainPage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.book),
             label: 'บันทึก',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add),
+            label: 'ออนไลน์',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.info),

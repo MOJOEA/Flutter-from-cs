@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../models/quote.dart';
+import '../../models/quote.dart';
 
 class ApiService {
   static Future<Quote> fetchQuote() async {

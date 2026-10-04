@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import 'package:my_first_app/services/database_helper.dart';
-import 'package:my_first_app/services/api_service.dart';
+import 'package:my_first_app/services/db/database_helper.dart';
+import 'package:my_first_app/services/api/api.service.dart';
 
-import '../models/diary.dart';
-import '../models/quote.dart';
+import '../../models/diary.dart';
+import '../../models/quote.dart';
 
 import 'add_diary_page.dart';
-import 'diary_detail_page.dart';
+import '../diary_detail_page.dart';
 
 class DiaryListPage extends StatefulWidget {
   const DiaryListPage({super.key});
