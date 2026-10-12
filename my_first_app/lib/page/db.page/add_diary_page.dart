@@ -7,10 +7,7 @@ import '../../models/quote.dart';
 class AddDiaryPage extends StatefulWidget {
   final Diary? existing;
 
-  const AddDiaryPage({
-    super.key,
-    this.existing,
-  });
+  const AddDiaryPage({super.key, this.existing});
 
   @override
   State<AddDiaryPage> createState() => _AddDiaryPageState();
@@ -133,19 +130,14 @@ class _AddDiaryPageState extends State<AddDiaryPage> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: _moods.contains(_selectedMood)
-                      ? _selectedMood
-                      : null,
+                  value: _moods.contains(_selectedMood) ? _selectedMood : null,
                   decoration: const InputDecoration(
                     labelText: 'อารมณ์วันนี้',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.mood),
                   ),
                   items: _moods.map((mood) {
-                    return DropdownMenuItem(
-                      value: mood,
-                      child: Text(mood),
-                    );
+                    return DropdownMenuItem(value: mood, child: Text(mood));
                   }).toList(),
                   onChanged: (value) {
                     setState(() {
